@@ -134,15 +134,15 @@
 
         // --- 模擬課程資料 ---
         const MOCK_COURSES = [
-            { id: '11410CS 135501', name: '計算機程式設計一', teacher: '周百祥\n胡敏君', credit: 3, time: 'M7M8R6', room: 'DELTA台達107', required: '必', limit: 150, type: 'CS' },
-            { id: '11410CS 233602', name: '離散數學', teacher: '蔡明哲', credit: 3, time: 'M3M4W2', room: 'DELTA台達103', required: '必', limit: 120, type: 'CS' },
-            { id: '11410GEC 120301', name: '探索心智與行為：當代心理學', teacher: '李姝慧', credit: 3, time: 'T7T8T9', room: 'EDU教 305', required: '選', limit: 60, type: 'GE' },
-            { id: '11410LANG103025', name: '中高級英文三-閱讀', teacher: '劉文貞', credit: 2, time: 'W3W4', room: 'GEN II綜二204', required: '必', limit: 32, type: 'LANG' },
-            { id: '11410MATH103006', name: '微積分Ｂ一', teacher: '顏東勇', credit: 3, time: 'T3T4R3R4', room: 'GEN IV綜四121', required: '必', limit: 150, type: 'MATH' },
-            { id: '11410PE 111038', name: '大一體育', teacher: '林琨瀚', credit: 0, time: 'F7F8', room: '體育館', required: '必', limit: 50, type: 'PE' },
-            { id: '11410PHYS113302', name: '普通物理Ｂ一', teacher: '洪在明', credit: 3, time: 'T1T2F1F2', room: 'PHYS物 019', required: '必', limit: 120, type: 'PHYS' },
-            { id: '11410GE 140500', name: '產業創新與生涯探索', teacher: '李佳玫', credit: 2, time: 'TaTb', room: '實齋講堂', required: '選', limit: 60, type: 'GE' },
-            { id: '11410GEC 150201', name: '科技與社會', teacher: '林宗德', credit: 3, time: 'M7M8M9', room: 'EDU教 116', required: '選', limit: 50, type: 'GE' },
+            { id: '11410CS 135501', name: '計算機程式設計一', teacher: '周老師\n胡老師', credit: 3, time: 'M7M8R6', room: 'DELTA台達107', required: '必', limit: 150, type: 'CS' },
+            { id: '11410CS 233602', name: '離散數學', teacher: '蔡老師', credit: 3, time: 'M3M4W2', room: 'DELTA台達103', required: '必', limit: 120, type: 'CS' },
+            { id: '11410GEC 120301', name: '探索心智與行為：當代心理學', teacher: '李老師', credit: 3, time: 'T7T8T9', room: 'EDU教 305', required: '選', limit: 60, type: 'GE' },
+            { id: '11410LANG103025', name: '中高級英文三-閱讀', teacher: '劉老師', credit: 2, time: 'W3W4', room: 'GEN II綜二204', required: '必', limit: 32, type: 'LANG' },
+            { id: '11410MATH103006', name: '微積分Ｂ一', teacher: '顏老師', credit: 3, time: 'T3T4R3R4', room: 'GEN IV綜四121', required: '必', limit: 150, type: 'MATH' },
+            { id: '11410PE 111038', name: '大一體育', teacher: '林老師', credit: 0, time: 'F7F8', room: '體育館', required: '必', limit: 50, type: 'PE' },
+            { id: '11410PHYS113302', name: '普通物理Ｂ一', teacher: '洪老師', credit: 3, time: 'T1T2F1F2', room: 'PHYS物 019', required: '必', limit: 120, type: 'PHYS' },
+            { id: '11410GE 140500', name: '產業創新與生涯探索', teacher: '李老師', credit: 2, time: 'TaTb', room: '實齋講堂', required: '選', limit: 60, type: 'GE' },
+            { id: '11410GEC 150201', name: '科技與社會', teacher: '林老師', credit: 3, time: 'M7M8M9', room: 'EDU教 116', required: '選', limit: 50, type: 'GE' },
         ];
 
         const parseTimeCode = (timeCode) => {
@@ -272,7 +272,7 @@
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
                             </span>
-                            v1.0 正式發布
+                            科技應用小組　114062328　資工29級邱冠勳
                         </div>
                         <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl mb-6">
                             讓選課不再是<span className="text-nthu-primary">大海撈針</span>
@@ -408,7 +408,8 @@
                             <h2 className="text-3xl font-bold text-gray-900">互動體驗專區</h2>
                             <p className="mt-4 text-gray-600">
                                 這是擴充功能的<b>模擬版本</b>。試著在下方輸入關鍵字或點選時間格，體驗即時篩選的威力。<br/>
-                                <span className="text-sm text-gray-500">(註：為了演示方便，僅載入部分模擬課程資料)</span>
+                                <span className="text-sm text-gray-500">(完整模擬選課頁面請前往 <a href="https://nthucourseselectiontemplate.pages.dev/" target="_blank" rel="noopener noreferrer">https://nthucourseselectiontemplate.pages.dev/</a>)</span><br/>
+                                <span className="text-sm text-gray-500">(因學校於未選課時段不開放即時人數的查詢且禁止跨域fetch資料，故模擬網頁無法顯示即時人數)</span>
                             </p>
                         </div>
 
@@ -438,7 +439,7 @@
                                             type="text" 
                                             value={queryTeacher}
                                             onChange={(e) => setQueryTeacher(e.target.value)}
-                                            placeholder="例如：周百祥..." 
+                                            placeholder="例如：周老師..." 
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nthu-primary focus:border-transparent"
                                         />
                                     </div>
@@ -593,10 +594,7 @@
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-900">程式架構</h2>
                             <p className="mt-4 text-gray-600">擴充功能專案結構一覽 (點擊檔案可讀取內容)</p>
-                            <p className="text-xs text-orange-600 mt-2 font-medium">
-                                <Icons.AlertTriangle className="w-3 h-3 inline mr-1" />
-                                需使用 Local Server (如 Live Server) 開啟此網頁才能讀取檔案
-                            </p>
+                            
                         </div>
 
                         <div className="bg-gray-50 p-8 rounded-2xl border border-gray-200 shadow-inner overflow-x-auto">
@@ -700,7 +698,7 @@
                     </div>
                     <div className="text-right">
                         <p className="text-gray-400 text-sm">Designed & Developed by</p>
-                        <p className="font-bold">邱冠勳 (114062328)</p>
+                        <p className="font-bold">資工29級邱冠勳 (114062328)</p>
                     </div>
                 </div>
             </footer>
