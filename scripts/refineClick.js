@@ -1,3 +1,4 @@
+// Resolved the issue in the school administration system(ccxp) where side menus could only be expanded by clicking the icon, but not by clicking the text.
 (function() {
     'use strict';
 
@@ -15,4 +16,5 @@
             targetTextAnchor.style.cursor = 'pointer';
         }
     });
+
 })();
