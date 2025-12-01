@@ -109,7 +109,6 @@ function openSavedCoursesModal(buttonRect) {
             if (action === 'add' && course.addActionArgs) {
                 if (course.isGeInput) {
                     const priorityInput = target.parentElement.querySelector(`.ge-priority-input[data-course-index="${index}"]`);
-                    // 需要在執行前，將志願序的值設定到主頁面的 form 中
                     document.form1.aspr.value = priorityInput ? priorityInput.value : '';
                 }
                 executeInPageContext('checks', course.addActionArgs);
