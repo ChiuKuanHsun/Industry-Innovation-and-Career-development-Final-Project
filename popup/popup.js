@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
     const allowGeClashCheckbox = document.getElementById('allow-ge-clash');
-    const colorThemeSelect = document.getElementById('color-theme'); // 新增
+    const colorThemeSelect = document.getElementById('color-theme');
 
     
     const ratioSlider = document.getElementById('frameset-ratio');
