@@ -1,4 +1,4 @@
-// popup/popup.js
+// popup.js
 
 const nthuTimeSlots = [
     { code: '1', start: '08:00', end: '08:50' },
