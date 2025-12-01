@@ -5,18 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>清大選課助手 - NTHU Course Assistant</title>
     
-    <!-- React & ReactDOM (使用穩定的 18 版本) -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel (用於解析 JSX) -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Prism.js (語法高亮) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap');
         
         body {
             font-family: 'Noto Sans TC', sans-serif;
@@ -24,9 +29,9 @@
             scroll-behavior: smooth;
         }
 
-        /* 自定義滾動條 */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
             background: #f1f1f1; 
@@ -39,7 +44,6 @@
             background: #94a3b8; 
         }
 
-        /* 樹狀圖連接線樣式 */
         .tree-line {
             position: absolute;
             left: 0;
@@ -57,7 +61,6 @@
             background-color: #e2e8f0;
         }
 
-        /* 模擬選課系統的時間格子樣式 */
         .demo-time-slot {
             cursor: pointer;
             transition: all 0.2s;
@@ -66,8 +69,32 @@
             background-color: #e2e8f0;
         }
         .demo-time-slot.selected {
-            background-color: #7F3F98 !important; /* NTHU Purple */
+            background-color: #7F3F98 !important;
             border-color: #5b2d6e;
+        }
+
+        pre[class*="language-"] {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding: 1.5rem !important;
+            font-family: 'Fira Code', monospace !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+        }
+        code[class*="language-"] {
+            font-family: 'Fira Code', monospace !important;
+            text-shadow: none !important;
+        }
+
+        .search-menu-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .search-menu-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 200ms, transform 200ms;
         }
     </style>
 
@@ -77,7 +104,7 @@
                 extend: {
                     colors: {
                         nthu: {
-                            primary: '#7F3F98', // 清大紫
+                            primary: '#7F3F98',
                             dark: '#5b2d6e',
                             light: '#e9d5f2'
                         }
@@ -91,46 +118,30 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 內建 Icon 元件 (解決 CDN 載入問題) ---
+        // --- Icons ---
         const Icons = {
-            BookOpen: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            ),
-            Chrome: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
-            ),
-            Filter: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            ),
-            Database: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            ),
-            Layout: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            ),
-            FileText: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            ),
-            Folder: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            ),
-            FileJson: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"/></svg>
-            ),
-            Code: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            ),
-            GraduationCap: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            ),
-            Search: ({ className }) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            )
+            BookOpen: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Chrome: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>,
+            Filter: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+            Database: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Layout: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
+            FileText: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            Folder: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+            FileJson: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"/></svg>,
+            Code: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+            GraduationCap: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
+            Search: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Eye: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Loader: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${className} animate-spin`}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>,
+            AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+            ArrowLeft: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+            ChevronRight: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"/></svg>
         };
 
-        // --- 模擬資料: 課程列表 (部分取自真實資料) ---
+        // --- 模擬課程資料 ---
         const MOCK_COURSES = [
             { id: '11410CS 135501', name: '計算機程式設計一', teacher: '周老師\n胡老師', credit: 3, time: 'M7M8R6', room: 'DELTA台達107', required: '必', limit: 150, type: 'CS' },
             { id: '11410CS 233602', name: '離散數學', teacher: '蔡老師', credit: 3, time: 'M3M4W2', room: 'DELTA台達103', required: '必', limit: 120, type: 'CS' },
@@ -143,7 +154,6 @@
             { id: '11410GEC 150201', name: '科技與社會', teacher: '林老師', credit: 3, time: 'M7M8M9', room: 'EDU教 116', required: '選', limit: 50, type: 'GE' },
         ];
 
-        // --- 輔助函數: 解析時間代碼 ---
         const parseTimeCode = (timeCode) => {
             const dayMap = { 'M': 1, 'T': 2, 'W': 3, 'R': 4, 'F': 5, 'S': 6, 'U': 7 };
             const slots = [];
@@ -155,7 +165,201 @@
             return slots;
         };
 
-        // --- 元件: 導覽列 ---
+        // --- 搜尋選單元件 ---
+        const SearchMenu = ({ course, onClose, position }) => {
+            const [view, setView] = useState('main'); // main | dcard | nthumods | opass | google
+            const teacherName = course.teacher.split('\n')[0];
+
+            function encodeFor1111OPT(payload) {
+                // JSON -> URI
+                const uriEncoded = encodeURIComponent(JSON.stringify(payload));
+
+                // URI -> bytes -> base64
+                const bytes = new TextEncoder().encode(uriEncoded);
+                let binary = "";
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                let b64 = btoa(binary);
+
+                // Convert to Base64-URL and remove padding
+                return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+            }
+            const createOpassUrl = (keyword) => {
+                // Create an object that matches the website's API expected structure
+                const searchParams = { "keyword": keyword, "college_id": 10935223, "type": 0, "order": "-modify_time" };
+                
+                
+                // Encode the entire JSON string
+                const encodedString = encodeFor1111OPT(searchParams);
+
+                return `https://www.1111opt.com.tw/search-result/${encodedString}`;
+            };
+
+            const platforms = [
+                { id: 'dcard', name: 'Dcard', color: 'hover:bg-blue-500 hover:text-white' },
+                { id: 'nthumods', name: 'NTHU MODS', color: 'hover:bg-purple-500 hover:text-white' },
+                { id: 'opass', name: '歐趴糖 (Opass)', color: 'hover:bg-yellow-500 hover:text-white' },
+                { id: 'google', name: 'Google', color: 'hover:bg-green-500 hover:text-white' },
+            ];
+
+            const getSubMenuLinks = () => {
+                let links = [];
+                switch (view) {
+                    case 'dcard':
+                        links = [
+                            { text: '查詢：課程名稱', url: `https://www.dcard.tw/search?query=${encodeURIComponent(course.name)}&forum=nthu` },
+                            { text: '查詢：教師名稱', url: `https://www.dcard.tw/search?query=${encodeURIComponent(teacherName)}&forum=nthu` },
+                            { text: '查詢：課名＋教師', url: `https://www.dcard.tw/search?query=${encodeURIComponent(course.name + ' ' + teacherName)}&forum=nthu` }
+                        ];
+                        break;
+                    case 'nthumods':
+                        links = [
+                            { text: '查詢：課程名稱', url: `https://nthumods.com/zh/courses?nthu_courses%5Bquery%5D=${encodeURIComponent(course.name)}` },
+                            { text: '查詢：教師名稱', url: `https://nthumods.com/zh/courses?nthu_courses%5Bquery%5D=${encodeURIComponent(teacherName)}` },
+                            { text: '查詢：科號', url: `https://nthumods.com/zh/courses?nthu_courses%5Bquery%5D=${encodeURIComponent(course.id.split(' ')[1])}` }
+                        ];
+                        break;
+                    case 'opass':
+                        links = [
+                            { text: '查詢：課程名稱', url: createOpassUrl(course.name) },
+                            { text: '查詢：教師名稱', url: createOpassUrl(teacherName) }
+                        ];
+                        break;
+                    case 'google':
+                        links = [
+                            { text: '查詢：課程名稱', url: `https://www.google.com/search?q=${encodeURIComponent(course.name + ' 清大')}` },
+                            { text: '查詢：教師名', url: `https://www.google.com/search?q=${encodeURIComponent(teacherName + ' 清大')}` }
+                        ];
+                        break;
+                    default:
+                        break;
+                }
+                return links;
+            };
+
+            const handleMenuClick = (e) => {
+                e.stopPropagation();
+            };
+
+            return (
+                <div 
+                    className="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right"
+                    style={{ top: `${position.y}px`, left: `${position.x}px` }}
+                    onClick={handleMenuClick}
+                >
+                    {view === 'main' ? (
+                        <div className="w-48">
+                            <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 text-sm">
+                                選擇查詢平台
+                            </div>
+                            <ul>
+                                {platforms.map(p => (
+                                    <li 
+                                        key={p.id}
+                                        className={`px-4 py-2 text-sm text-gray-700 cursor-pointer flex justify-between items-center transition-colors ${p.color}`}
+                                        onClick={() => setView(p.id)}
+                                    >
+                                        {p.name}
+                                        <Icons.ChevronRight className="w-4 h-4 opacity-50" />
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ) : (
+                        <div className="w-48">
+                            <div 
+                                className="px-4 py-2 border-b border-gray-200 bg-gray-50 text-gray-600 font-medium cursor-pointer flex items-center gap-2 hover:bg-gray-100"
+                                onClick={() => setView('main')}
+                            >
+                                <Icons.ArrowLeft className="w-4 h-4" /> 返回
+                            </div>
+                            {getSubMenuLinks().map((link, idx) => (
+                                <a 
+                                    key={idx} 
+                                    href={link.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTimeout(() => onClose(), 100);
+                                    }}
+                                >
+                                    {link.text}
+                                </a>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- 程式碼檢視 Modal ---
+        const CodeModal = ({ file, error, isLoading, onClose }) => {
+            const codeRef = useRef(null);
+
+            const getLanguageFromFilename = (filename) => {
+                if (!filename) return 'plaintext';
+                if (filename.endsWith('.js')) return 'javascript';
+                if (filename.endsWith('.css')) return 'css';
+                if (filename.endsWith('.html')) return 'html';
+                if (filename.endsWith('.json')) return 'json';
+                return 'plaintext';
+            };
+
+            useEffect(() => {
+                if (!isLoading && !error && file && codeRef.current && window.Prism) {
+                    window.Prism.highlightElement(codeRef.current);
+                }
+            }, [file, isLoading, error]);
+
+            return (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="bg-[#2d2d2d] w-full max-w-4xl h-[80vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-gray-700" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#1e1e1e] px-4 py-3 flex items-center justify-between border-b border-gray-700">
+                            <div className="flex items-center gap-2 text-gray-200">
+                                <Icons.FileText className="w-4 h-4 text-blue-400" />
+                                <span className="font-mono text-sm">{file ? file.name : 'Loading...'}</span>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white transition p-1 rounded-full hover:bg-gray-700">
+                                <Icons.X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-auto bg-[#2d2d2d] relative">
+                            {isLoading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-[#2d2d2d] z-10">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Icons.Loader className="w-8 h-8 text-blue-500" />
+                                        <p className="text-gray-400 text-sm">讀取檔案中...</p>
+                                    </div>
+                                </div>
+                            )}
+                            {error ? (
+                                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                                    <Icons.AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+                                    <h3 className="text-lg font-bold text-white mb-2">無法讀取檔案</h3>
+                                    <p className="text-gray-400 mb-4 max-w-lg text-sm whitespace-pre-wrap">{error}</p>
+                                    <div className="bg-gray-800 p-4 rounded-lg text-left text-xs text-gray-300 font-mono">
+                                        <p>請確認：</p>
+                                        <ul className="list-disc ml-4 mt-1 space-y-1">
+                                            <li>檔案 "{file?.name}" 是否存在於 <code>index.html</code> 的同一目錄下？</li>
+                                            <li>您是否使用了 Local Server (如 Live Server)？</li>
+                                            <li>(瀏覽器不允許 <code>file://</code> 協議讀取本地檔案)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            ) : (
+                                <pre className={`language-${getLanguageFromFilename(file?.name)}`}>
+                                    <code ref={codeRef} className={`language-${getLanguageFromFilename(file?.name)}`}>
+                                        {file?.content}
+                                    </code>
+                                </pre>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const Navbar = () => (
             <nav className="bg-white/90 backdrop-blur-md shadow-sm fixed w-full z-50 border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -171,10 +375,11 @@
                             <a href="#demo" className="text-gray-600 hover:text-nthu-primary font-medium transition">互動體驗</a>
                             <a href="#architecture" className="text-gray-600 hover:text-nthu-primary font-medium transition">程式架構</a>
                             <a href="#learning" className="text-gray-600 hover:text-nthu-primary font-medium transition">開發心得</a>
+                            <a href="#future" className="text-gray-600 hover:text-nthu-primary font-medium transition">未來展望</a>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="text-right hidden sm:block">
-                                <div className="text-sm font-bold text-gray-900">邱冠勳</div>
+                                <div className="text-sm font-bold text-gray-900">資工29級 邱冠勳</div>
                                 <div className="text-xs text-gray-500">114062328</div>
                             </div>
                             <a href="https://chromewebstore.google.com/detail/%E6%B8%85%E5%A4%A7%E9%81%B8%E8%AA%B2%E5%8A%A9%E6%89%8B-nthu-course-select/amljcdhkpahlpbfniijlgknmdecajoel?hl=zh-TW&utm_source=ext_sidebar" 
@@ -189,7 +394,6 @@
             </nav>
         );
 
-        // --- 元件: Hero Section ---
         const Hero = () => (
             <div className="relative bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -211,14 +415,13 @@
                             <a href="#demo" className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-nthu-primary hover:bg-nthu-dark md:py-4 md:text-lg md:px-10 shadow-xl transition transform hover:-translate-y-1">
                                 立即體驗 Demo
                             </a>
-                            <a href="#motivation" className="px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10 shadow-sm transition">
+                            <a href="#features" className="px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10 shadow-sm transition">
                                 了解更多
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                {/* 裝飾背景 */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-30">
                     <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-purple-200 blur-3xl"></div>
                     <div className="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-blue-200 blur-3xl"></div>
@@ -226,7 +429,6 @@
             </div>
         );
 
-        // --- 元件: 創作動機與特色 ---
         const Features = () => {
             const features = [
                 {
@@ -252,7 +454,7 @@
             ];
 
             return (
-                <section id="motivation" className="py-20 bg-white">
+                <section id="features" className="py-20 bg-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl font-bold text-gray-900">解決選課三大痛點</h2>
@@ -293,18 +495,19 @@
             );
         };
 
-        // --- 元件: 互動 Demo 區塊 (核心技術移植) ---
         const InteractiveDemo = () => {
             const [queryName, setQueryName] = useState('');
             const [queryTeacher, setQueryTeacher] = useState('');
-            const [selectedTimes, setSelectedTimes] = useState([]); // [{day: 1, slot: '1'}, ...]
+            const [selectedTimes, setSelectedTimes] = useState([]); 
             const [filteredCourses, setFilteredCourses] = useState(MOCK_COURSES);
+            
+            // Search Menu State
+            const [activeSearch, setActiveSearch] = useState(null); // { courseId: string, x: number, y: number }
 
             const timeSlots = ['1', '2', '3', '4', 'n', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd'];
             const days = [1, 2, 3, 4, 5, 6, 7];
             const dayLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
-            // 處理時間格點擊
             const handleTimeClick = (day, slot) => {
                 const exists = selectedTimes.find(t => t.day === day && t.slot === slot);
                 if (exists) {
@@ -314,18 +517,36 @@
                 }
             };
 
-            // 核心篩選邏輯 (移植自 filter.js)
+            // 開啟搜尋選單
+            const handleSearchClick = (e, courseId) => {
+                e.stopPropagation();
+                // 取得按鈕位置，計算選單顯示位置 (避免超出視窗)
+                const rect = e.currentTarget.getBoundingClientRect();
+                // 微調位置，讓選單出現在按鈕左下方
+                setActiveSearch({ 
+                    courseId, 
+                    x: rect.left - 160, 
+                    y: rect.bottom + 5 
+                });
+            };
+
+            // 點擊外部關閉選單
+            useEffect(() => {
+                const closeMenu = () => setActiveSearch(null);
+                if (activeSearch) {
+                    window.addEventListener('click', closeMenu);
+                }
+                return () => window.removeEventListener('click', closeMenu);
+            }, [activeSearch]);
+
             useEffect(() => {
                 const results = MOCK_COURSES.filter(course => {
-                    // 1. 文字篩選
                     const nameMatch = !queryName || course.name.includes(queryName);
                     const teacherMatch = !queryTeacher || course.teacher.includes(queryTeacher);
                     
-                    // 2. 時間篩選 (只要課程包含任何一個選中的時間格，就算符合 - 模糊搜尋模式)
                     let timeMatch = true;
                     if (selectedTimes.length > 0) {
-                        const courseTimes = parseTimeCode(course.time); // 將 M7M8 轉為物件陣列
-                        // 檢查是否有交集
+                        const courseTimes = parseTimeCode(course.time);
                         timeMatch = courseTimes.some(ct => 
                             selectedTimes.some(st => st.day === ct.day && st.slot === ct.slot)
                         );
@@ -343,14 +564,21 @@
                             <h2 className="text-3xl font-bold text-gray-900">互動體驗專區</h2>
                             <p className="mt-4 text-gray-600">
                                 這是擴充功能的<b>模擬版本</b>。試著在下方輸入關鍵字或點選時間格，體驗即時篩選的威力。<br/>
-                                <span className="text-sm text-gray-500">(完整模擬選課頁面請前往 <a href="https://nthucourseselectiontemplate.pages.dev/" target="_blank" rel="noopener noreferrer">https://nthucourseselectiontemplate.pages.dev/</a>)</span><br/>
-                                <span className="text-sm text-gray-500">(因學校於未選課時段不開放即時人數的查詢且禁止跨域fetch資料，故模擬網頁無法顯示即時人數)</span>
+                                <span className="text-sm text-gray-500">(完整模擬選課頁面請前往 <a href="https://nthucourseselectiontemplate.pages.dev/" target="_blank" rel="noopener noreferrer">https://nthucourseselectiontemplate.pages.dev/</a>，並搭配Extension體驗完整功能。)</span><br/>
+                                <span className="text-sm text-gray-500">(因學校禁止跨域fetch資料(CORS policy)，故模擬網頁無法顯示即時人數)</span>
                             </p>
                         </div>
 
-                        {/* 模擬的 Extension UI 容器 */}
-                        <div className="bg-white border-2 border-nthu-primary rounded-lg shadow-xl overflow-hidden">
-                            {/* Header */}
+                        <div className="bg-white border-2 border-nthu-primary rounded-lg shadow-xl overflow-hidden relative">
+                            {/* Search Menu Overlay */}
+                            {activeSearch && (
+                                <SearchMenu 
+                                    course={MOCK_COURSES.find(c => c.id === activeSearch.courseId)}
+                                    position={{ x: activeSearch.x, y: activeSearch.y }}
+                                    onClose={() => setActiveSearch(null)}
+                                />
+                            )}
+
                             <div className="bg-white p-4 border-b flex justify-between items-center">
                                 <h3 className="text-nthu-primary font-bold text-lg flex items-center gap-2">
                                     <Icons.Filter className="w-5 h-5" /> NTHU COURSE ASSISTANT
@@ -358,9 +586,7 @@
                                 <div className="text-xs text-gray-400">Demo Mode</div>
                             </div>
 
-                            {/* Control Panel */}
                             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Left: Inputs */}
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">篩選科目名稱</label>
@@ -385,9 +611,11 @@
                                     <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
                                         <strong>提示：</strong> 點擊右側時間格，可篩選出在該時段有開課的課程 (聯集搜尋)。
                                     </div>
+                                    <div className="p-3 bg-orange-50 rounded-lg text-sm text-orange-700">
+                                        <strong>提示：</strong> 點擊右下方操作，可直接跳轉課程評價。
+                                    </div>
                                 </div>
 
-                                {/* Right: Time Grid */}
                                 <div className="lg:col-span-2 overflow-x-auto">
                                     <div className="min-w-[400px]">
                                         <div className="grid grid-cols-8 gap-1 mb-1">
@@ -413,7 +641,6 @@
                                 </div>
                             </div>
 
-                            {/* Simulated Course Table */}
                             <div className="border-t border-gray-200">
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
@@ -422,7 +649,7 @@
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科號</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科目名稱</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">學分</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">時間</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 font-bold uppercase tracking-wider">時間</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">教室</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">教師</th>
                                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -439,8 +666,12 @@
                                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{course.room}</td>
                                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{course.teacher.replace('\n', '、')}</td>
                                                         <td className="px-4 py-3 whitespace-nowrap text-center">
-                                                            <button className="text-gray-400 hover:text-nthu-primary transition-colors" title="查詢評價(模擬)">
-                                                                <Icons.Search className="w-4 h-4" />
+                                                            <button 
+                                                                className="text-gray-400 hover:text-nthu-primary transition-colors p-1 rounded-full hover:bg-purple-50" 
+                                                                title="查詢評價(模擬)"
+                                                                onClick={(e) => handleSearchClick(e, course.id)}
+                                                            >
+                                                                <Icons.Search className="w-5 h-5" />
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -462,25 +693,36 @@
             );
         };
 
-        // --- 元件: 樹狀架構圖 ---
-        const TreeItem = ({ name, type, children, isLast }) => {
+        const TreeItem = ({ name, type, path, children, isLast, onFileSelect }) => {
             const [isOpen, setIsOpen] = useState(true);
             const Icon = type === 'folder' ? Icons.Folder : type === 'json' ? Icons.FileJson : Icons.FileText;
             const iconColor = type === 'folder' ? 'text-yellow-500' : type === 'json' ? 'text-green-600' : 'text-blue-500';
+            
+            const isClickable = type !== 'folder';
 
             return (
                 <div className="relative pl-6">
-                    {/* 連接線 */}
                     <div className="tree-line" style={{ top: '-0.5rem', bottom: isLast ? 'auto' : '0', height: isLast ? '1.2rem' : 'auto' }}></div>
                     <div className="tree-connector"></div>
 
-                    <div className="flex items-center gap-2 py-1 group cursor-pointer select-none" onClick={() => type === 'folder' && setIsOpen(!isOpen)}>
+                    <div 
+                        className={`flex items-center gap-2 py-1 group select-none ${isClickable ? 'cursor-pointer hover:bg-gray-100 rounded px-2 -ml-2' : 'cursor-default'}`} 
+                        onClick={() => {
+                            if (type === 'folder') setIsOpen(!isOpen);
+                            if (isClickable) onFileSelect(path);
+                        }}
+                    >
                         <Icon className={`w-[18px] h-[18px] ${iconColor}`} />
-                        <span className="text-sm text-gray-700 font-mono group-hover:text-nthu-primary transition-colors">{name}</span>
+                        <span className={`text-sm font-mono transition-colors ${isClickable ? 'text-gray-700 group-hover:text-nthu-primary group-hover:font-bold' : 'text-gray-700'}`}>
+                            {name}
+                        </span>
                         {type === 'folder' && (
                             <span className="text-xs text-gray-400 ml-2">
                                 {isOpen ? '[-]' : '[+]'}
                             </span>
+                        )}
+                        {isClickable && (
+                            <Icons.Eye className="w-3 h-3 text-gray-300 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                         )}
                     </div>
                     {type === 'folder' && isOpen && (
@@ -492,52 +734,155 @@
             );
         };
 
-        const ArchitectureTree = () => (
-            <section id="architecture" className="py-20 bg-white">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold text-gray-900">程式架構</h2>
-                        <p className="mt-4 text-gray-600">擴充功能專案結構一覽 (Extension File Structure)</p>
-                    </div>
+        const ArchitectureTree = () => {
+            const [viewingFile, setViewingFile] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
 
-                    <div className="bg-gray-50 p-8 rounded-2xl border border-gray-200 shadow-inner overflow-x-auto">
-                        <div className="min-w-[300px]">
-                            <div className="flex items-center gap-2 py-1 font-bold text-gray-800">
-                                <Icons.Layout className="w-5 h-5 text-nthu-primary" />
-                                <span>NTHU Course Assistant (Root)</span>
+            // 模擬檔案結構
+            const FILE_STRUCTURE = [
+                { name: "manifest.json", type: "json", path: "manifest.json" },
+                {
+                    name: "popup", type: "folder", children: [
+                        { name: "popup.html", type: "html", path: "popup/popup.html" },
+                        { name: "popup.js", type: "js", path: "popup/popup.js" },
+                        { name: "popup.css", type: "css", path: "popup/popup.css" }
+                    ]
+                },
+                {
+                    name: "scripts", type: "folder", children: [
+                        { name: "content.js", type: "js", path: "scripts/content.js" },
+                        { name: "execute.js", type: "js", path: "scripts/execute.js" },
+                        { name: "filter.js", type: "js", path: "scripts/filter.js" },
+                        { name: "modal.js", type: "js", path: "scripts/modal.js" },
+                        { name: "parser.js", type: "js", path: "scripts/parser.js" },
+                        { name: "refineClick.js", type: "js", path: "scripts/refineClick.js" },
+                        { name: "ui.js", type: "js", path: "scripts/ui.js" }
+                    ]
+                },
+                {
+                    name: "styles", type: "folder", children: [
+                        { name: "style.css", type: "css", path: "styles/style.css" }
+                    ]
+                },
+                {
+                    name: "icons", type: "folder", children: [
+                        { name: "icon16.png", type: "image", path: "icons/icon16.png" },
+                        { name: "icon48.png", type: "image", path: "icons/icon48.png" },
+                        { name: "icon128.png", type: "image", path: "icons/icon128.png" }
+                    ]
+                }
+            ];
+
+            const filterFiles = (nodes, term) => {
+                if (!term) return nodes;
+                return nodes.map(node => {
+                    const isMatch = node.name.toLowerCase().includes(term.toLowerCase());
+                    if (node.children) {
+                        const filteredChildren = filterFiles(node.children, term);
+                        if (isMatch || filteredChildren.length > 0) {
+                            return { ...node, children: isMatch ? node.children : filteredChildren, isOpen: true };
+                        }
+                    } else if (isMatch) {
+                        return node;
+                    }
+                    return null;
+                }).filter(Boolean);
+            };
+
+            const displayedTree = useMemo(() => filterFiles(FILE_STRUCTURE, searchTerm), [searchTerm]);
+
+            const handleFileSelect = async (path) => {
+                if (!path) return;
+                if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+                    alert('這是圖片檔，無法預覽程式碼');
+                    return;
+                }
+                setIsLoading(true);
+                setError(null);
+                setViewingFile({ name: path, content: '' });
+
+                try {
+                    const response = await fetch(path);
+                    if (!response.ok) throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+                    const text = await response.text();
+                    setViewingFile({ name: path, content: text });
+                } catch (e) {
+                    console.error("Read file failed:", e);
+                    setError(e.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const renderTree = (nodes) => {
+                return nodes.map((node, index) => (
+                    <TreeItem 
+                        key={node.path || node.name} 
+                        name={node.name} 
+                        type={node.type} 
+                        path={node.path}
+                        isLast={index === nodes.length - 1} 
+                        onFileSelect={handleFileSelect}
+                    >
+                        {node.children ? renderTree(node.children) : null}
+                    </TreeItem>
+                ));
+            };
+
+            return (
+                <section id="architecture" className="py-20 bg-white">
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-gray-900">程式架構</h2>
+                            <p className="mt-4 text-gray-600">擴充功能專案結構一覽 (點擊檔案可讀取內容)</p>
+                            
+                        </div>
+
+                        <div className="bg-gray-50 p-8 rounded-2xl border border-gray-200 shadow-inner">
+                            <div className="mb-6 max-w-xs">
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="搜尋檔案..." 
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-nthu-primary text-sm"
+                                    />
+                                    <div className="absolute left-3 top-2.5 text-gray-400">
+                                        <Icons.Search className="w-4 h-4" />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="ml-2 border-l border-gray-200 pl-2">
-                                <TreeItem name="manifest.json" type="json" />
-                                <TreeItem name="popup/" type="folder">
-                                    <TreeItem name="popup.html" type="file" />
-                                    <TreeItem name="popup.js" type="file" />
-                                    <TreeItem name="popup.css" type="file" isLast={true} />
-                                </TreeItem>
-                                <TreeItem name="scripts/" type="folder">
-                                    <TreeItem name="content.js" type="file" />
-                                    <TreeItem name="execute.js" type="file" />
-                                    <TreeItem name="filter.js" type="file" />
-                                    <TreeItem name="modal.js" type="file" />
-                                    <TreeItem name="parser.js" type="file" />
-                                    <TreeItem name="refineClick.js" type="file" />
-                                    <TreeItem name="ui.js" type="file" isLast={true} />
-                                </TreeItem>
-                                <TreeItem name="styles/" type="folder">
-                                    <TreeItem name="style.css" type="file" isLast={true} />
-                                </TreeItem>
-                                <TreeItem name="icons/" type="folder" isLast={true}>
-                                    <TreeItem name="icon16.png" type="file" />
-                                    <TreeItem name="icon48.png" type="file" />
-                                    <TreeItem name="icon128.png" type="file" isLast={true} />
-                                </TreeItem>
+
+                            <div className="min-w-[300px] overflow-x-auto">
+                                <div className="flex items-center gap-2 py-1 font-bold text-gray-800 mb-2">
+                                    <Icons.Layout className="w-5 h-5 text-nthu-primary" />
+                                    <span>NTHU Course Assistant (Root)</span>
+                                </div>
+                                <div className="ml-2 border-l border-gray-200 pl-2">
+                                    {renderTree(displayedTree)}
+                                    {displayedTree.length === 0 && (
+                                        <div className="text-sm text-gray-500 py-2 italic">沒有找到符合的檔案</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-        );
 
-        // --- 元件: 技術與心得 ---
+                    {viewingFile && (
+                        <CodeModal 
+                            file={viewingFile} 
+                            error={error}
+                            isLoading={isLoading}
+                            onClose={() => setViewingFile(null)} 
+                        />
+                    )}
+                </section>
+            );
+        };
+
         const TechAndLearning = () => (
             <section id="learning" className="py-20 bg-gray-50">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -572,7 +917,7 @@
                             </p>
                             <h4 className="text-lg font-bold text-gray-800">3. 狀態管理與通訊</h4>
                             <p>
-                                在實作「暫存清單」時，使用了 <code>chrome.storage</code> API 來實現資料持久化，讓使用者的選課清單不會因關閉瀏覽器而消失。同時利用 <code>window.postMessage</code> 解決了 Content Script 與網頁內建 JavaScript 函數（如 <code>checks()</code>）溝通的權限問題。
+                                在實作「暫存清單」時，使用了 <code>chrome.storage</code> API 來實現資料持久化，讓使用者的選課清單不會因關閉瀏覽器而消失。同時利用 <code>window.postMessage</code> 解決了 Content Script 與網頁內建 JavaScript 函數溝通的權限問題。
                             </p>
                             <p>
                                 這次專案不僅讓我熟悉了 Chrome Extension 的開發流程，更讓我體會到「解決真實問題」帶來的成就感。
@@ -583,7 +928,51 @@
             </section>
         );
 
-        // --- 元件: Footer ---
+        const FutureVision = () => (
+            <section id="future" className="py-20 bg-white">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
+                            <Icons.Layout className="w-8 h-8 text-nthu-primary" /> 未來展望
+                        </h2>
+                        <p className="text-lg text-gray-600">持續優化與擴展功能，讓選課體驗更加完美</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border border-blue-200 shadow-md">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">1</div>
+                                <h3 className="text-xl font-bold text-gray-800">AI 智能推薦</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed">
+                                整合 AI，根據使用者的修課紀錄、興趣與學位要求，自動推薦最適合的課程組合。
+                            </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-2xl border border-purple-200 shadow-md">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white font-bold">2</div>
+                                <h3 className="text-xl font-bold text-gray-800">課程分析</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed">
+                                將課程大綱利用 AI 進行深入分析，幫助學生了解課程內容與重點，並提供先備知識建議。
+                            </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border border-green-200 shadow-md">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold">3</div>
+                                <h3 className="text-xl font-bold text-gray-800">一鍵更改志願序</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed">
+                                開發自動化腳本，讓使用者能夠一鍵調整選課志願序，節省繁瑣的手動操作時間。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+
         const Footer = () => (
             <footer className="bg-gray-900 text-white py-12 border-t border-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
@@ -593,13 +982,12 @@
                     </div>
                     <div className="text-right">
                         <p className="text-gray-400 text-sm">Designed & Developed by</p>
-                        <p className="font-bold">資工29級邱冠勳 (114062328)</p>
+                        <p className="font-bold">資工29級 邱冠勳 (114062328)</p>
                     </div>
                 </div>
             </footer>
         );
 
-        // --- Main App ---
         const App = () => {
             return (
                 <div className="min-h-screen bg-white">
@@ -609,6 +997,7 @@
                     <InteractiveDemo />
                     <ArchitectureTree />
                     <TechAndLearning />
+                    <FutureVision />
                     <Footer />
                 </div>
             );
