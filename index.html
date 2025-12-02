@@ -911,7 +911,7 @@
                             <p>
                                 由於選課系統使用 <code>iframe</code> 與 <code>table</code> 排版，我必須深入研究其 DOM 結構，使用 JavaScript 動態注入篩選面板（UI Injection），並利用 <code>MutationObserver</code> 來監聽表格的變化，確保在翻頁或重新搜尋後，助手的功能依然有效。
                             </p>
-                            <h4 className="text-lg font-bold text-gray-800">2. 跨域資料獲取</h4>
+                            <h4 className="text-lg font-bold text-gray-800">2. 資料獲取</h4>
                             <p>
                                 為了實現「即時人數查詢」，我學習了如何使用 <code>Fetch API</code> 發送 POST 請求至校務系統後端，並解析回傳的 Big5 編碼 HTML 資料，將其即時顯示在課程列表上，解決了以往需要不斷切換視窗的痛點。
                             </p>
@@ -1008,3 +1008,4 @@
     </script>
 </body>
 </html>
+
