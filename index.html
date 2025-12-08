@@ -374,6 +374,7 @@
                             <a href="#features" className="text-gray-600 hover:text-nthu-primary font-medium transition">功能特色</a>
                             <a href="#demo" className="text-gray-600 hover:text-nthu-primary font-medium transition">互動體驗</a>
                             <a href="#architecture" className="text-gray-600 hover:text-nthu-primary font-medium transition">程式架構</a>
+                            <a href="#flowchart" className="text-gray-600 hover:text-nthu-primary font-medium transition">系統流程</a>
                             <a href="#learning" className="text-gray-600 hover:text-nthu-primary font-medium transition">開發心得</a>
                             <a href="#future" className="text-gray-600 hover:text-nthu-primary font-medium transition">未來展望</a>
                         </div>
@@ -883,6 +884,135 @@
             );
         };
 
+        const SystemFlow = () => {
+            const FlowNode = ({ title, desc, icon: Icon, color = "bg-white", children }) => (
+                <div className={`relative p-6 rounded-xl border-2 ${color === "bg-white" ? "border-gray-200 bg-white" : "border-nthu-primary/20 bg-purple-50"} shadow-sm flex flex-col items-center text-center z-10 min-w-[200px]`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${color === "bg-white" ? "bg-gray-100 text-gray-600" : "bg-nthu-primary text-white"}`}>
+                        {Icon && <Icon className="w-6 h-6" />}
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-1">{title}</h4>
+                    {desc && <p className="text-xs text-gray-500">{desc}</p>}
+                    {children}
+                </div>
+            );
+
+            const Arrow = ({ vertical = true }) => (
+                <div className={`flex items-center justify-center ${vertical ? "h-12 w-full" : "w-12 h-full"}`}>
+                    {vertical ? (
+                        <div className="h-full w-0.5 bg-gray-300 relative">
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 border-r-2 border-b-2 border-gray-300 rotate-45"></div>
+                        </div>
+                    ) : (
+                        <div className="w-full h-0.5 bg-gray-300 relative">
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t-2 border-r-2 border-gray-300 rotate-45"></div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <section id="flowchart" className="py-20 bg-gray-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
+                                <Icons.Layout className="w-8 h-8 text-nthu-primary" /> 系統運作流程
+                            </h2>
+                            <p className="text-lg text-gray-600">從網頁載入到使用者互動的完整資料流向</p>
+                        </div>
+
+                        <div className="overflow-x-auto pb-12">
+                            <div className="min-w-[800px] flex flex-col items-center">
+                                {/* Initialization Phase */}
+                                <div className="mb-4">
+                                    <span className="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-bold tracking-wider uppercase">Initialization</span>
+                                </div>
+                                
+                                <FlowNode title="Content Script 啟動" desc="content.js" icon={Icons.Chrome}>
+                                    <div className="absolute -right-4 top-1/2 translate-x-full -translate-y-1/2 w-32 flex items-center">
+                                        <div className="w-full h-0.5 bg-dashed bg-gray-300"></div>
+                                        <div className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-500 whitespace-nowrap">注入 execute.js</div>
+                                    </div>
+                                </FlowNode>
+
+                                <Arrow />
+
+                                <FlowNode title="解析 DOM 結構" desc="parser.js" icon={Icons.Code} />
+
+                                <Arrow />
+
+                                <FlowNode title="注入 UI 元件" desc="ui.js" icon={Icons.Layout} color="highlight">
+                                    <p className="text-xs text-purple-600 mt-1">(篩選器、按鈕、即時人數欄)</p>
+                                </FlowNode>
+
+                                <div className="h-16 w-0.5 bg-gray-300"></div>
+                                
+                                {/* Interaction Phase - Split into 3 branches */}
+                                <div className="relative w-full max-w-4xl">
+                                    {/* Horizontal Connector */}
+                                    <div className="absolute top-0 left-[16.66%] right-[16.66%] h-0.5 bg-gray-300"></div>
+                                    
+                                    {/* Vertical Connectors to branches */}
+                                    <div className="absolute top-0 left-[16.66%] h-8 w-0.5 bg-gray-300"></div>
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 h-8 w-0.5 bg-gray-300"></div>
+                                    <div className="absolute top-0 right-[16.66%] h-8 w-0.5 bg-gray-300"></div>
+
+                                    <div className="grid grid-cols-3 gap-8 pt-8">
+                                        {/* Branch 1: Filtering */}
+                                        <div className="flex flex-col items-center">
+                                            <div className="mb-4">
+                                                <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-bold">篩選功能</span>
+                                            </div>
+                                            <FlowNode title="使用者輸入條件" desc="關鍵字 / 時間 / 衝堂" icon={Icons.Filter} />
+                                            <Arrow />
+                                            <FlowNode title="執行篩選邏輯" desc="filter.js" icon={Icons.Code}>
+                                                <ul className="text-xs text-left text-gray-500 mt-2 space-y-1 list-disc pl-4">
+                                                    <li>比對課程名稱/教師</li>
+                                                    <li>檢查時間 (嚴格搜尋/模糊搜尋)</li>
+                                                    <li>判斷衝堂 (X-Class/通識)</li>
+                                                </ul>
+                                            </FlowNode>
+                                            <Arrow />
+                                            <FlowNode title="更新表格顯示" desc="DOM Manipulation" icon={Icons.Eye} />
+                                        </div>
+
+                                        {/* Branch 2: Live Counts */}
+                                        <div className="flex flex-col items-center">
+                                            <div className="mb-4">
+                                                <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold">即時人數</span>
+                                            </div>
+                                            <FlowNode title="點擊更新按鈕" desc="ui.js" icon={Icons.Database} />
+                                            <Arrow />
+                                            <FlowNode title="Fetch API 請求" desc="POST JH727002.php" icon={Icons.Chrome} />
+                                            <Arrow />
+                                            <FlowNode title="解析 Big5 HTML" desc="TextDecoder" icon={Icons.FileText} />
+                                            <Arrow />
+                                            <FlowNode title="填入表格欄位" desc="Update Cells" icon={Icons.Layout} />
+                                        </div>
+
+                                        {/* Branch 3: Saved Courses */}
+                                        <div className="flex flex-col items-center">
+                                            <div className="mb-4">
+                                                <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">暫存清單</span>
+                                            </div>
+                                            <FlowNode title="點擊收藏 / 移除" desc="temp.js" icon={Icons.BookOpen} />
+                                            <Arrow />
+                                            <FlowNode title="更新 Storage" desc="chrome.storage.sync" icon={Icons.Database} />
+                                            <Arrow />
+                                            <FlowNode title="開啟清單 Modal" desc="modal.js" icon={Icons.Layout} />
+                                            <Arrow />
+                                            <FlowNode title="執行加選 / 大綱" desc="postMessage -> execute.js" icon={Icons.Code}>
+                                                <p className="text-xs text-orange-500 mt-1">呼叫網頁原生函數</p>
+                                            </FlowNode>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
         const TechAndLearning = () => (
             <section id="learning" className="py-20 bg-gray-50">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -911,7 +1041,7 @@
                             <p>
                                 由於選課系統使用 <code>iframe</code> 與 <code>table</code> 排版，我必須深入研究其 DOM 結構，使用 JavaScript 動態注入篩選面板（UI Injection），並利用 <code>MutationObserver</code> 來監聽表格的變化，確保在翻頁或重新搜尋後，助手的功能依然有效。
                             </p>
-                            <h4 className="text-lg font-bold text-gray-800">2. 資料獲取</h4>
+                            <h4 className="text-lg font-bold text-gray-800">2. 跨域資料獲取</h4>
                             <p>
                                 為了實現「即時人數查詢」，我學習了如何使用 <code>Fetch API</code> 發送 POST 請求至校務系統後端，並解析回傳的 Big5 編碼 HTML 資料，將其即時顯示在課程列表上，解決了以往需要不斷切換視窗的痛點。
                             </p>
@@ -996,6 +1126,7 @@
                     <Features />
                     <InteractiveDemo />
                     <ArchitectureTree />
+                    <SystemFlow />
                     <TechAndLearning />
                     <FutureVision />
                     <Footer />
@@ -1008,4 +1139,3 @@
     </script>
 </body>
 </html>
-
