@@ -1245,7 +1245,7 @@
                                 為了實現「即時人數查詢」功能，我需要向校務系統的 API 發送請求並解析回應：
                             </p>
                             <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                                <li>使用 <code>Fetch API</code> 發送 POST 請求，模擬瀏覽器的表單提交，攜帶必要的 Cookie 與 CSRF Token</li>
+                                <li>使用 <code>Fetch API</code> 發送 POST 請求，模擬瀏覽器的表單提交，攜帶使用者的 ACIXSTORE Token</li>
                                 <li>處理 Big5 編碼的 HTML 回應（選課系統使用的編碼），需要先轉換為 UTF-8 才能正確解析中文字元</li>
                                 <li>從回應的 HTML 中提取「已選人數」與「待亂數人數」，使用正則表達式與 DOM Parser 進行資料萃取</li>
                                 <li>實作批次查詢與快取機制，避免短時間內重複請求造成伺服器負擔</li>
@@ -1267,9 +1267,8 @@
                             </p>
                             <ul className="list-disc pl-6 space-y-2 text-gray-700">
                                 <li>使用 <code>chrome.storage.local</code> 儲存使用者的暫存清單與偏好設定，並實作即時同步機制</li>
-                                <li>透過 <code>window.postMessage</code> 在 Content Script 與 Page Context 之間傳遞訊息，呼叫選課系統的內建函數（如加選、退選）</li>
+                                <li>透過 <code>window.postMessage</code> 在 Content Script 與 Page Context 之間傳遞訊息，呼叫選課系統的內建函數（如加選）</li>
                                 <li>實作事件驅動架構，當使用者點擊「加入暫存」時，觸發一連串的狀態更新與 UI 重新渲染</li>
-                                <li>處理非同步操作的競態條件（Race Condition），確保多個操作同時執行時不會產生錯誤</li>
                                 <li>設計資料結構來追蹤已選課程、待選課程、與衝堂狀態，並在不同頁面間保持一致性</li>
                             </ul>
                             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mt-3">
@@ -1431,4 +1430,5 @@
     </script>
 </body>
 </html>
+
 
